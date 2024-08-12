@@ -22,6 +22,10 @@ mongoose.connect(process.env.MONGO_URI,).then(() => {
 // Use user routes
 app.use('/api/users', userRoutes);
 
+app.get('/', (req, res) => {
+  res.send({ msg: 'here we go !!' });
+});
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -3,9 +3,6 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const User = require('../models/user'); // Adjust the path as needed
 
-// Secret key for JWT
-const JWT_SECRET = 'your_secret_key_here';
-const REFRESH_TOKEN_SECRET = 'your_refresh_token_secret_here'; // Add a secret for refresh tokens
 
 // Transporter for nodemailer
 const transporter = nodemailer.createTransport({
@@ -21,7 +18,7 @@ const transporter = nodemailer.createTransport({
 
 // Sign-up function
 const signUp = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { firstName, lastName, userName, email, password } = req.body;
 
   try {
     // Check if the user already exists
@@ -34,7 +31,7 @@ const signUp = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user
-    const newUser = new User({ name, email, password: hashedPassword });
+    const newUser = new User({ userName, firstName, lastName, email, password: hashedPassword, role: "customer", });
     await newUser.save();
 
     // Return success response
@@ -62,23 +59,16 @@ const login = async (req, res) => {
     }
 
     // Generate a JWT token
-    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: '1h'
-    });
-
-    // Generate a refresh token
-    const refreshToken = jwt.sign({ userId: user._id }, REFRESH_TOKEN_SECRET, {
-      expiresIn: '7d' // or your preferred expiration time
+    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET_KEY, {
+      expiresIn: process.env.JWT_EXPIRE_TIME,
     });
 
     // Return success response with additional data
     res.status(200).json({
       token,
-      refreshToken,
       userId: user._id,
       name: user.name,
       role: user.role,
-      tokenExpiresIn: '1h'
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -132,5 +122,5 @@ const forgetPassword = async (req, res) => {
 module.exports = {
   signUp,
   login,
-  forgetPassword  
+  forgetPassword
 };
