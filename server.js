@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGO_URI,).then(() => {
 app.use('/api/users', userRoutes);
 
 app.get('/', (req, res) => {
-  res.send({ msg: 'here we go !!' });
+  res.send({ msg: 'test for sending api request !! .)' });
 });
 
 // Start the server
