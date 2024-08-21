@@ -18,15 +18,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
- /* slots: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Slot',
-    default: [] // Optional field, default to an empty array
-  }],*/
+
+  passwordChangedAt: Date,
+  passwordResetCode: String,
+  passwordResetExpired: Date,
+  passwordResetVerified: Boolean,
+
   role: {
     type: String,
-    enum: ['barber', 'admin', 'customer', 'unknown'],
-    default: 'unknown'
+    enum: ['organizer', 'admin', 'user','customer','unkown'],
+    default: 'user'
   },
   description: {
     type: String,

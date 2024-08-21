@@ -9,7 +9,9 @@ router.post('/signup', userController.signUp);
 router.post('/login', userController.login);
 
 // Route for forget password
-router.post('/forget-password', userController.forgetPassword);
+router.post("/forgotPassword", userController.forgotPassword);
+router.post("/verifyResetCode", userController.verifyPasswordResetCode);
+router.put("/resetPassword", userController.resetPassword);
 
 
 

@@ -1,20 +1,10 @@
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const User = require('../models/user'); // Adjust the path as needed
+const User = require('../models/user');
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const { sendEmail } = require("../utils/sendEmail");
+const { resetCodeContent } = require('../template/ressetCode');
 
-
-// Transporter for nodemailer
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: true,
-
-  auth: {
-    user: process.env.EMAIL_USERNAME,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
 
 // Sign-up function
 const signUp = async (req, res) => {
@@ -75,52 +65,133 @@ const login = async (req, res) => {
   }
 };
 
-// Forget password function
-const forgetPassword = async (req, res) => {
-  const { email } = req.body;
-
+/* ----------------------------------------------------- */
+/**
+ * @Desc   : forgot password
+ * @Route  : @Post /api/users/forgotPassword
+ * @access : public
+ */
+const forgotPassword = async (req, res) => {
   try {
-    // Find the user by email
-    const user = await User.findOne({ email });
+    // Get user by email
+    const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ msg: "User not found" });
     }
+    // Generate code verification
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Generate a new random password
-    const newPassword = Math.random().toString(36).slice(-8);
+    // Hash Reset Code and save it in the database
+    const hashedResetCode = crypto
+      .createHash("sha256")
+      .update(resetCode)
+      .digest("hex");
 
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.passwordResetCode = hashedResetCode;
 
-    // Update the user's password
-    user.password = hashedPassword;
+    // Add expiration time for password reset code
+    user.passwordResetExpired = Date.now() + 15 * 60 * 1000;
+    user.passwordResetVerified = false;
+
     await user.save();
+    // Send Reset Code via email
 
-    // Send the new password via email
-    const mailOptions = {
-      from: 'your_email@example.com',
-      to: user.email,
-      subject: 'Password Reset',
-      text: `Your new password is: ${newPassword}`
-    };
+    await sendEmail({
+      email: user.email,
+      subject: `Password Reset Code`,
+      html: resetCodeContent(resetCode),
+    });
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return res.status(500).json({ message: 'Error sending email', error });
-      } else {
-        res.status(200).json({ message: 'New password sent to your email' });
-      }
+    res.status(200).json({
+      status: "success",
+      message: "Your password reset code sent to your email",
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
+
+  }
+
+};
+
+/* ----------------------------------------------------- */
+
+/**
+ * @Desc   : Verify Reset Code
+ * @Route  : @Post /api/users/verifyResetCode
+ * @access : public
+ */
+const verifyPasswordResetCode = async (req, res) => {
+  try {
+    // Get User from database
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+
+    }
+    // Hash Reset Code that comes from body and compare it to the reset code stored in database
+    const hashedResetCode = crypto
+      .createHash("sha256")
+      .update(req.body.resetCode)
+      .digest("hex");
+
+    if (
+      user.passwordResetCode !== hashedResetCode ||
+      user.passwordResetExpired.getTime() < Date.now()
+    ) {
+      // Reset code is wrong or expired
+      return res.status(400).json({ msg: "Invalid reset code or expired" });
+
+    }
+
+    user.passwordResetVerified = true;
+    await user.save();
+
+    return res.status(200).json({ msg: "you can move to next step" });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+
   }
 };
 
+/* ----------------------------------------------------- */
+
+/**
+ * @Desc   : Reset password
+ * @Route  : @Put /api/auth/resetPassword
+ * @access : public
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+    if (!user.passwordResetVerified) {
+      return res.status(400).json({ msg: "Reset Code not verified" });
+
+    }
+    // update user information
+    user.password = req.body.newPassword;
+    user.passwordResetCode = undefined;
+    user.passwordResetExpired = undefined;
+    user.passwordResetVerified = undefined;
+
+    await user.save();
+
+    return res.status(200).json({ msg: "user password updated" });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+
+};
 
 
 
 module.exports = {
   signUp,
   login,
-  forgetPassword
+  forgotPassword,
+  verifyPasswordResetCode,
+  resetPassword
 };
