@@ -7,6 +7,7 @@ router.post('/signup', userController.signUp);
 
 // Route for user login
 router.post('/login', userController.login);
+router.post('/getQr', userController.sendEmailQr);
 
 // Route for forget password
 router.post("/forgotPassword", userController.forgotPassword);

@@ -4,6 +4,11 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { sendEmail } = require("../utils/sendEmail");
 const { resetCodeContent } = require('../template/ressetCode');
+const { qrcodeInvitation } = require('../template/qrcode');
+
+
+const QRCode = require('qrcode');
+
 
 
 // Sign-up function
@@ -171,8 +176,11 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ msg: "Reset Code not verified" });
 
     }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(req.body.newPassword, 10);
     // update user information
-    user.password = req.body.newPassword;
+    user.password = hashedPassword;
     user.passwordResetCode = undefined;
     user.passwordResetExpired = undefined;
     user.passwordResetVerified = undefined;
@@ -186,6 +194,36 @@ const resetPassword = async (req, res) => {
 
 };
 
+const sendEmailQr = async (req, res) => {
+
+  try {
+    const base64Url = await QRCode.toDataURL('welcome');
+
+
+    // Generate the QR code base64 URL
+    const qrCodeDataURL = await QRCode.toDataURL(base64Url);
+
+    // Verify that the base64 string is correct by logging it to the console
+    console.log(qrCodeDataURL);
+
+    await sendEmail({
+      email: req.body.email,
+      subject: `QR CODE`,
+      html: qrcodeInvitation(qrCodeDataURL),
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Your Qr code",
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+
+  }
+
+
+
+}
 
 
 module.exports = {
@@ -193,5 +231,6 @@ module.exports = {
   login,
   forgotPassword,
   verifyPasswordResetCode,
-  resetPassword
+  resetPassword,
+  sendEmailQr
 };
