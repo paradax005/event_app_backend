@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Enable CORS
 app.use(cors());
+app.use(express.static(path.join(__dirname, "uploads")));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)

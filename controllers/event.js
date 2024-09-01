@@ -1,5 +1,31 @@
 const Event = require('../models/event');
 
+const { v4: uuidv4 } = require("uuid");
+const sharp = require("sharp");
+
+const { uploadSingleImage } = require('../middlewares/upload_image');
+
+
+
+const uploadEventImage = uploadSingleImage("eventCover");
+
+// Image Processing
+const resizeImage = async (req, res, next) => {
+    console.log(req.file);
+    const filename = `events-${uuidv4()}-${Date.now()}.jpeg`;
+
+    await sharp(req.file.buffer)
+        .toFormat("jpeg")
+        .jpeg({ quality: 95 })
+        .toFile(`uploads/events/${filename}`);
+
+    // Save image into db
+    req.body.eventCover = filename;
+
+    next();
+};
+
+
 const createEvent = async (req, res) => {
     const { user, name, date, location, price, availableTickets, description, eventCover } = req.body;
 
@@ -57,4 +83,6 @@ module.exports = {
     deleteEvent,
     updateEvent,
     getAllEvent,
+    uploadEventImage,
+    resizeImage,
 }

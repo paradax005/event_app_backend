@@ -39,4 +39,24 @@ const EventSchema = new mongoose.Schema(
     },
 );
 
+// return image base Url + image name
+const setImageUrl = (doc) => {
+    if (doc.eventCover) {
+        if (doc.eventCover.startsWith("events")) {
+            const imageUrl = `${process.env.BASE_URL}/events/${doc.eventCover}`;
+            doc.eventCover = imageUrl;
+        }
+    }
+    return doc;
+};
+
+EventSchema.post("init", function (doc) {
+    setImageUrl(doc);
+});
+
+EventSchema.post("save", function (doc) {
+    setImageUrl(doc);
+});
+
+
 module.exports = mongoose.model('Event', EventSchema);
