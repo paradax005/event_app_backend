@@ -11,6 +11,8 @@ router.post('/create',
 // Read all events
 router.get('/', eventController.getAllEvent);
 
+router.get('/:id', eventController.getAllEvent);
+
 // Update an event by ID
 router.put('/:id', eventController.updateEvent);
 

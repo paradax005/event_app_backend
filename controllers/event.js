@@ -72,9 +72,23 @@ const updateEvent = async (req, res) => {
 const getAllEvent = async (req, res) => {
     try {
         const events = await Event.find();
-        res.status(200).json(events);
+        res.status(200).json({ events: events });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+}
+
+const getEventById = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id).populate('user');
+        if (event) {
+            return res.status(200).json({ event: event });
+        } else {
+            return res.status(404).json({ msg: "this event doesn't exist " });
+        }
+
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
     }
 }
 
@@ -83,6 +97,7 @@ module.exports = {
     deleteEvent,
     updateEvent,
     getAllEvent,
+    getEventById,
     uploadEventImage,
     resizeImage,
 }

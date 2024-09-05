@@ -9,6 +9,7 @@ const app = express();
 // routes
 const userRoutes = require('./routes/user');
 const eventRoutes = require('./routes/event');
+const purchaseRoute = require('./routes/purchase');
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -29,6 +30,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Use user routes
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/purchases',purchaseRoute);
 
 // Test route
 app.get('/', (req, res) => {

@@ -1,65 +1,67 @@
 const mongoose = require('mongoose');
 const Event = require('../models/event');
+const { faker } = require('@faker-js/faker');
+const dotenv = require('dotenv').config();
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error('MongoDB connection error:', err));
 
-// Sample event data
-const events = [
-    {
-        user: mongoose.Types.ObjectId(),
-        name: 'Tech Conference 2024',
-        date: new Date('2024-05-15T09:00:00Z'),
-        location: 'San Francisco, CA',
-        price: 199.99,
-        availableTickets: 150,
-        description: 'A conference about the latest in tech and innovation.',
-        eventCover: 'tech-conference-2024.jpg',
-    },
-    {
-        user: mongoose.Types.ObjectId(),
-        name: 'Music Festival Summer',
-        date: new Date('2024-07-20T12:00:00Z'),
-        location: 'Los Angeles, CA',
-        price: 99.99,
-        availableTickets: 500,
-        description: 'Enjoy a day of music with your favorite bands and artists.',
-        eventCover: 'music-festival-summer.jpg',
-    },
-    {
-        user: mongoose.Types.ObjectId(),
-        name: 'Art Gallery Opening',
-        date: new Date('2024-03-10T18:00:00Z'),
-        location: 'New York, NY',
-        price: 49.99,
-        availableTickets: 75,
-        description: 'An exclusive opening of the new contemporary art gallery.',
-        eventCover: 'art-gallery-opening.jpg',
-    },
+// List of event names and locations
+const eventNames = [
+    'Festival of Lights', 'Sousse Music Gala', 'Sfax Art Exhibition', 'Monastir Cultural Festival',
+    'Carthage Jazz Festival', 'Tunisian Food Fair', 'Mediterranean Dance Extravaganza', 'Ancient History Conference',
+    'Sousse International Film Festival', 'Tunisian Poetry Night', 'Sfax Fashion Show', 'Monastir Science Expo',
+    'Tunisian Craftsmanship Exhibition', 'Sousse Beach Party', 'Tunisian Traditional Music Concert', 'Monastir Literary Meetup',
+    'Sfax Culinary Workshop', 'Carthage Archaeological Symposium', 'Sousse Wine Tasting Event', 'Tunisian Heritage Parade',
+    'Monastir Jazz Jam', 'Sfax Eco-Friendly Market', 'Tunisian Art and Culture Gala', 'Sousse Youth Festival',
+    'Tunisian Historical Play', 'Monastir Contemporary Art Showcase', 'Sfax Music and Dance Festival', 'Tunisian Architecture Exhibit',
+    'Carthage Literary Festival', 'Sousse Carnival', 'Tunisian Theatre Night', 'Monastir Folk Music Celebration',
+    'Sfax Tech Innovation Fair', 'Tunisian Visual Arts Exhibition', 'Sousse International Cuisine Day', 'Monastir Urban Art Event',
+    'Sfax Maritime Festival', 'Tunisian Musical Theater Performance', 'Carthage Film Premiere', 'Sousse Vintage Market',
+    'Tunisian Jewelry Exhibition', 'Monastir Wellness Retreat'
 ];
 
-// Seed the database
-const seedEvents = async () => {
-    try {
-        // Clear existing events
-        await Event.deleteMany({});
-        console.log('Existing events cleared.');
+// List of locations
+const locations = ['Tunis', 'Sousse', 'Sfax', 'Monastir'];
 
-        // Insert sample events
-        await Event.insertMany(events);
-        console.log('Sample events added.');
+const eventCovers = ['events_1.jpg', 'events_2.png', 'events_3.png'];
 
-        // Close the connection
-        mongoose.connection.close();
-    } catch (err) {
-        console.error('Error seeding events:', err);
-        mongoose.connection.close();
+// Generate random events
+const generateRandomEvents = (num) => {
+    const events = [];
+    for (let i = 0; i < num; i++) {
+        const eventName = faker.helpers.arrayElement(eventNames);
+        const location = faker.helpers.arrayElement(locations);
+        const eventDate = faker.date.between('2024-09-04', '2024-12-31');
+        const price = parseFloat(faker.commerce.price(20, 100));
+        const availableTickets = faker.number.int({ min: 25, max: 200 });
+        const description = faker.lorem.sentence();
+
+        events.push({
+            user: '66c60047b6f939f2297afb89',
+            name: eventName,
+            date: eventDate,
+            location: location,
+            price: price,
+            availableTickets: availableTickets,
+            description: description,
+            eventCover: faker.helpers.arrayElement(eventCovers)
+        });
     }
+    return events;
 };
 
-seedEvents();
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI,).then(
+    async () => {
+        console.log('Connected to MongoDB');
+        await Event.deleteMany();
+        console.log('Existing events removed');
+        const events = generateRandomEvents(40);
+        await Event.insertMany(events);
+        console.log('Events seeded successfully');
+        mongoose.disconnect();
+    })
+    .catch(err => {
+        console.error('Error connecting to MongoDB', err);
+        mongoose.disconnect();
+    });
+
